@@ -17,6 +17,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"sort"
 )
 
 func (this *RequestContext) safelyUpdateConfig(path string) {
@@ -156,6 +157,33 @@ func (this *RequestContext) Update(action string) error {
 	return nil
 }
 
+func (this *RequestContext) GenerateIndexPage() string {
+	content := ""
+
+    if this.path == ".md" {
+	    log.Println("generate index page")
+
+	    markdowns_json, err := ioutil.ReadFile("list.json")
+	    if err != nil {
+	        log.Println("generate index page error")
+	    } else {
+	        var markdowns []string
+	        err = json.Unmarshal(markdowns_json, &markdowns)
+	        if err != nil {
+	            log.Println("list.json format error")
+	        } else {
+	            sort.Sort(sort.StringSlice(markdowns))
+	            content += "# Wiki \n\n"
+	            for _, element := range markdowns {
+	            	content += "[" + element + "]" + "(" + element + ")" + "\n\n"
+				}
+	        }
+	    }
+	}
+
+	return content
+}
+
 func (this *RequestContext) View(version string) error {
 	var err error
 	var content []byte
@@ -163,7 +191,7 @@ func (this *RequestContext) View(version string) error {
 		content, err = getFileOfVersion(this.path, version)
 	} else {
 		if _, err = os.Stat(this.path); err == nil {
-			content, err = ioutil.ReadFile(this.path)
+            content, err = ioutil.ReadFile(this.path)
 		} else {
 			// file not exist, but never mind, set err = nil to just continue edit a new file
 			err = nil
@@ -172,6 +200,13 @@ func (this *RequestContext) View(version string) error {
 	if err != nil {
 		return err
 	}
+
+	index_page := this.GenerateIndexPage()
+
+	if index_page != "" {
+		content = []byte(index_page)
+	}
+
 	this.Content = template.HTML(content)
 
 	custom_view_head, errh := ioutil.ReadFile(this.path + ".head")
