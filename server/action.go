@@ -169,18 +169,17 @@ func generateIndexPage(path string) string {
 		if strings.HasPrefix(pwd, ".git") {
 			return nil;
 		}
-		if pwd == ".md" || pwd == "." {
+		if info.Name() == ".md" || pwd == "." {
 			return nil;
 		}
 		if !isDir(pwd) && !strings.HasSuffix(pwd, ".md") {
 			return nil;
 		}
 		dirs := strings.Split(pwd, "/")
-		content += "|"
-		for i := 0; i < len(dirs); i++ {
-			content += "--"
+		for i := 0; i < len(dirs) - 1; i++ {
+			content += "  "
 		}
-		content += " " + "[" + info.Name() + "]" + "(" + pwd + ")" + "\n\n" //打印文件或目录名
+		content += "- " + "[" + info.Name() + "]" + "(" + pwd + ")" + "\n\n" //打印文件或目录名
 		return nil
 	})
 	return content
@@ -203,7 +202,7 @@ func (this *RequestContext) View(version string) error {
 		return err
 	}
 
-	if this.path != "" {
+	if this.path == ".md" {
 		content = []byte(generateIndexPage("."))
 	}
 
