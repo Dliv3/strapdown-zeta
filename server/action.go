@@ -17,7 +17,7 @@ import (
 	"path"
 	"strings"
 	"time"
-	"sort"
+	"path/filepath"
 )
 
 func (this *RequestContext) safelyUpdateConfig(path string) {
@@ -157,30 +157,32 @@ func (this *RequestContext) Update(action string) error {
 	return nil
 }
 
-func (this *RequestContext) GenerateIndexPage() string {
-	content := ""
+func isDir(path string) bool {
+	f, _ := os.Stat(path)
+	return f.IsDir()
+}
 
-    if this.path == ".md" {
-	    log.Println("generate index page")
 
-	    markdowns_json, err := ioutil.ReadFile("list.json")
-	    if err != nil {
-	        log.Println("generate index page error")
-	    } else {
-	        var markdowns []string
-	        err = json.Unmarshal(markdowns_json, &markdowns)
-	        if err != nil {
-	            log.Println("list.json format error")
-	        } else {
-	            sort.Sort(sort.StringSlice(markdowns))
-	            content += "# Wiki \n\n"
-	            for _, element := range markdowns {
-	            	content += "[" + element + "]" + "(" + element + ")" + "\n\n"
-				}
-	        }
-	    }
-	}
-
+func generateIndexPage(path string) string {
+	content := "# Wiki \n\n"
+	filepath.Walk(path, func(pwd string, info os.FileInfo, err error) error{
+		if strings.HasPrefix(pwd, ".git") {
+			return nil;
+		}
+		if pwd == ".md" || pwd == "." {
+			return nil;
+		}
+		if !isDir(pwd) && !strings.HasSuffix(pwd, ".md") {
+			return nil;
+		}
+		dirs := strings.Split(pwd, "/")
+		content += "|"
+		for i := 0; i < len(dirs); i++ {
+			content += "--"
+		}
+		content += " " + "[" + info.Name() + "]" + "(" + pwd + ")" + "\n\n" //打印文件或目录名
+		return nil
+	})
 	return content
 }
 
@@ -201,10 +203,8 @@ func (this *RequestContext) View(version string) error {
 		return err
 	}
 
-	index_page := this.GenerateIndexPage()
-
-	if index_page != "" {
-		content = []byte(index_page)
+	if this.path != "" {
+		content = []byte(generateIndexPage("."))
 	}
 
 	this.Content = template.HTML(content)
