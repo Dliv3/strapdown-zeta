@@ -179,7 +179,7 @@ func generateIndexPage(path string) string {
 		for i := 0; i < len(dirs) - 1; i++ {
 			content += "  "
 		}
-		content += "- " + "[" + info.Name() + "]" + "(" + pwd + ")" + "\n\n" //打印文件或目录名
+		content += "- " + "[" + info.Name() + "]" + "(" + strings.TrimSuffix(pwd, ".md") + ")" + "\n\n" //打印文件或目录名
 		return nil
 	})
 	return content
